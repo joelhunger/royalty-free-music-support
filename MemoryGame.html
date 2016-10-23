@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.0.0/raphael-min.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<link rel="stylesheet" type="text/css" href="MemoryGame.css"/>
+<meta charset=utf-8 />
+<title>Distractions - Memory Game</title>
+</head>
+<body>
+  <script>
+    var gameWidth = 500;
+    var gameHeight = 500;
+    
+    var gamePaper = Raphael(10, 90, gameWidth, gameHeight);
+    var margin = 10;
+    var playRect = gamePaper.rect(margin, margin, gamePaper.width - (margin * 2), gamePaper.height - (margin * 2), 30);
+    var strokeWidth = 20;
+    playRect.attr("fill", "#ffffff").attr("stroke-width", strokeWidth).attr("stroke", "#c2cecf");
+    
+    // some constants
+    var rows = 6;
+    var cols = 6;
+    var memorySquarePadding = 10;
+    var memorySquareWidth = (gameWidth - (strokeWidth * 2) - ((cols + 1) * memorySquarePadding)) / cols;
+    var memorySquareHeight = (gameHeight - (strokeWidth * 2) - ((rows + 1) * memorySquarePadding)) / rows;
+    memorySquares = new Array();
+    
+    var squareTypes = new Array("pipes", "equals", "x", "triangle", "circle", "square");
+    var colors = new Array("#ff00ff", "#0000ff", "#ffff00");
+    
+    $(document).ready( function () {
+       randomizeSquares();
+          
+    });
+    
+    function colorShapePair(tileColor, shapeType)
+    {
+       var self = this;
+       self.tileColor = tileColor;
+       self.shapeType = shapeType;
+    };
+    
+    function randomizeSquares() {
+      
+      var colorShapePairs = new Array();
+      var totalSquares = rows * cols;
+ 
+      var i = 0;
+      for (c = 0; c < colors.length; c++)
+      {
+         for (t = 0; t < squareTypes.length; t++)
+         {
+            for (p = 0; p < 2; p++)
+            {
+              // add two of each
+              colorShapePairs[i++] = new colorShapePair(colors[c], squareTypes[t]);
+            }
+         }
+      }
+
+      i = 0;
+      var r = 0;
+      var c = 0;
+      while (colorShapePairs.length > 0)
+      {
+         var index = Math.floor(Math.random() * colorShapePairs.length);
+         memorySquares[i++] = new memorySquare(r, c++, colorShapePairs[index].shapeType, "#aaccee", colorShapePairs[index].tileColor);
+        
+         if (r >= rows) { 
+             r = 0;
+         }
+         if (c >= cols) {
+             r++;
+             c = 0;
+         }
+         colorShapePairs.splice(index, 1);
+      }
+      
+    };
+    
+    var moves = 0;
+    var preventClicks = false;
+    function matchOrReset(ms) {    
+      var foundSelected = false;
+     
+      $(memorySquares).each(function() {
+        var curSquare = this;
+        if (this.selected && !this.finished)
+        { 
+          if (this.renderAs === ms.renderAs &&
+              colors.indexOf(this.symbolColor) === colors.indexOf(ms.symbolColor)
+              )
+          {
+            ms.selected = true;
+            this.finished = true;
+            ms.finished = true;
+            this.squareRect.animate({stroke: "#00d958"}, 600, "easeInOut");
+            ms.squareRect.animate({stroke: "#00d958"}, 600, "easeInOut");
+          }
+          else
+          {
+            preventClicks = true;
+            this.squareRect.animate({stroke: "#ff0000"}, 200, "linear", function() {
+              curSquare.squareRect.animate({stroke: "#aaccee"}, 1300, "easeOut", function() {
+                $("#debugger").html("secondAnimation");
+                curSquare.selected = false; 
+                preventClicks = false;
+                curSquare.flipCard();
+                ms.flipCard();
+              });
+            });
+            ms.squareRect.animate({stroke: "#ff0000"}, 200, "linear", function() {
+              ms.squareRect.animate({stroke: "#aaccee"}, 1300, "easeOut")});
+          }
+          foundSelected = true;
+          $("#moves").html(++moves);
+          return;
+        }
+      });
+      if (!foundSelected)
+      {
+         ms.selected = true; 
+      }
+      
+    };
+    
+    
+  
+    // drawing routines
+    function memorySquare(row, column, renderAs, color, symbolColor) {
+      var self = this;
+      self.symbolColor = symbolColor;
+      self.row = row;
+      self.column = column;
+      self.width = memorySquareWidth;
+      self.height = memorySquareHeight;
+      self.left = strokeWidth + ((column + 1) * memorySquarePadding) + (column * memorySquareWidth);
+      self.top = strokeWidth + ((row + 1) * memorySquarePadding) + (row * memorySquareHeight);
+      self.cornerRounding = memorySquareWidth * .2;
+      self.renderAs = renderAs;
+      
+      self.squareRect = gamePaper.rect(self.left, self.top, self.width, self.height, self.cornerRounding);
+      self.squareRect.attr("fill", color).attr("stroke-width", 3).attr("stroke", color);
+      
+      renderSymbol();
+      
+      self.cardBack = gamePaper.rect(self.left, self.top, self.width, self.height, self.cornerRounding);
+      self.cardBack.attr("fill", "#cecece").attr("stroke-width", 3);
+   
+      self.flipped = false;
+      self.selected = false;
+      self.finished = false;
+       
+      function renderSymbol() {
+          if (self.renderAs === 'circle') {
+            self.symbol = gamePaper.circle(self.left + memorySquareWidth / 2, 
+                                           self.top + memorySquareHeight / 2,
+                                           memorySquareWidth * .3);
+          }
+          else if (self.renderAs === 'square') { 
+             self.symbol = gamePaper.rect(self.left + memorySquareWidth * .2, 
+                                           self.top + memorySquareHeight * .2,
+                                           memorySquareWidth * .6,
+                                           memorySquareWidth * .6);      
+          }
+          else if (self.renderAs === 'triangle') { 
+             
+            var topX = self.left + (memorySquareWidth / 2);
+            var leftX = self.left + (memorySquareWidth * .2);
+            var rightX = (self.left + memorySquareWidth) - (memorySquareWidth * .2);
+            var topY = self.top + (memorySquareHeight * .2);
+            var bottomY = (self.top + memorySquareHeight) - (memorySquareHeight * .2);
+            
+            var pathString = "M" + leftX.toString() + " " + bottomY.toString() +
+                                         "L" + topX.toString() + " " + topY.toString() + 
+                                         "L" + rightX.toString() + " " + bottomY.toString() + 
+                                         "Z";
+            
+            self.symbol = gamePaper.path(pathString);
+          }
+          else if (self.renderAs === 'x') {
+           
+            var leftX = self.left + (memorySquareWidth * .2);
+            var rightX = (self.left + memorySquareWidth) - (memorySquareWidth * .2);
+            var topY = self.top + (memorySquareHeight * .2);
+            var bottomY = (self.top + memorySquareHeight) - (memorySquareHeight * .2);
+            
+            var pathString = "M" + leftX.toString() + " " + bottomY.toString() +
+                                         "L" + rightX.toString() + " " + topY.toString() + 
+                                         "M" + rightX.toString() + " " + bottomY.toString() + 
+                                         "L" + leftX.toString() + " " + topY.toString();
+            
+            self.symbol = gamePaper.path(pathString);
+            self.symbol.attr("stroke-width", 10);
+            
+          }
+          else if (self.renderAs === 'equals') {
+           
+            var leftX = self.left + (memorySquareWidth * .2);
+            var rightX = (self.left + memorySquareWidth) - (memorySquareWidth * .2);
+            var topY = self.top + (memorySquareHeight * .35);
+            var bottomY = (self.top + memorySquareHeight) - (memorySquareHeight * .35);
+            
+            var pathString = "M" + leftX.toString() + " " + topY.toString() +
+                                         "L" + rightX.toString() + " " + topY.toString() + 
+                                         "M" + leftX.toString() + " " + bottomY.toString() + 
+                                         "L" + rightX.toString() + " " + bottomY.toString();
+            
+            self.symbol = gamePaper.path(pathString);
+            self.symbol.attr("stroke-width", 10);
+            
+          }
+          else if (self.renderAs === 'pipes') {
+           
+            var leftX = self.left + (memorySquareWidth * .35);
+            var rightX = (self.left + memorySquareWidth) - (memorySquareWidth * .35);
+            var topY = self.top + (memorySquareHeight * .2);
+            var bottomY = (self.top + memorySquareHeight) - (memorySquareHeight * .2);
+            
+            var pathString = "M" + leftX.toString() + " " + topY.toString() +
+                                         "L" + leftX.toString() + " " + bottomY.toString() + 
+                                         "M" + rightX.toString() + " " + topY.toString() + 
+                                         "L" + rightX.toString() + " " + bottomY.toString();
+            
+            self.symbol = gamePaper.path(pathString);
+            self.symbol.attr("stroke-width", 10);
+            
+          }
+          self.symbol.attr("fill", symbolColor).attr("stroke", symbolColor);
+        };
+      
+        self.flipCard = function() {
+          if (preventClicks) { 
+            return;
+          }
+          if (!self.selected) { 
+            self.flipped = !self.flipped;
+            if (self.flipped)
+            {
+                self.symbol.attr("fill", symbolColor).attr("stroke", self.symbolColor);
+                matchOrReset(self);
+              
+                
+                var animLeft = self.left + ((self.width - 10) / 2);
+                
+                self.cardBack.animate({width: 0, left: animLeft}, 150, "easeInOut"); 
+            }
+            else
+            {
+              
+              self.cardBack.animate({width: self.width, left: self.left}, 150, "easeInOut", function() {
+              }); 
+            }
+          }
+        }
+
+        self.squareRect.click(function () {
+            self.flipCard();
+        });
+      
+        self.symbol.click(function () {
+            self.flipCard();
+        });
+      
+        self.cardBack.click(function () {
+            self.flipCard();
+        });
+        
+        self.squareRect.touchstart(function () {
+            self.flipCard();
+        });
+      
+        self.symbol.touchstart(function () {
+            self.flipCard();
+        });
+      
+        self.cardBack.touchstart(function () {
+            self.flipCard();
+        });
+ 
+    };
+
+  </script>
+  
+  <div id="title">Memory Game</div>
+  <div id="description">Here's another game I built as a learning experience for working with Javascript, JQuery, and Raphael.js.</div>
+  <div id="moves">0</div>
+  <div id="movesTitle">Moves</div>
+  
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.0.0/raphael-min.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<link rel="stylesheet" type="text/css" href="ColorPicker.css">
+<meta charset=utf-8 />
+<title>Distractions - Color Picker</title>
+</head>
+<body>
+  
+  <!-- slider -->
+  <script>
+    
+    // Background rect to change color as the sliders are dragged
+    var bgPaper = Raphael(20, 150, 460, 260);
+    var bgRect = bgPaper.rect(0, 0, 460, 260, 20);
+    bgRect.attr("fill", "#000000");
+    bgRect.attr("stroke-width", 0);
+   
+    // Event handler for when a slider value changes.
+    var valueChanged = function() {
+      $("#slider1Value").html("Red: " + s.sliderValue.toFixed(0)); 
+      $("#slider2Value").html("Green: " + s2.sliderValue.toFixed(0));
+      $("#slider3Value").html("Blue: " + s3.sliderValue.toFixed(0));
+      var r = s.sliderValue.toFixed(0);
+      var g = s2.sliderValue.toFixed(0);
+      var b = s3.sliderValue.toFixed(0);
+      
+      var c = "rgb(" + r + "," + g + "," + b + ")";
+      bgRect.attr("fill", c);
+      $("#Hex").html("Hex: " + Raphael.rgb(r, g, b));
+      
+      var hsb = Raphael.rgb2hsb(r, g, b);
+      var hue = (hsb.h * 255).toFixed(0);
+      var sat = (hsb.s * 255).toFixed(0);
+      var bright = (hsb.b * 255).toFixed(0);
+      
+      $("#Hue").html("Hue: " + hue); 
+      $("#Sat").html("Saturation: " + sat);
+      $("#Bright").html("Brightness: " + bright);
+
+    };
+
+    // Create the R G and B sliders
+    var p = Raphael(50, 200, 400, 50);
+    var s = new rSlider(p, "#FF0000", 0, 255, valueChanged);
+    
+    var p2 = Raphael(50, 260, 400, 50);
+    var s2 = new rSlider(p2, "#00FF00", 0, 255, valueChanged);
+    
+    var p3 = Raphael(50, 320, 400, 50);
+    var s3 = new rSlider(p3, "#0000FF", 0, 255, valueChanged);
+
+    
+    // Slider "class"
+    function rSlider(paper, backgroundColor, min, max, onValueChanged) {
+      
+      var self = this;
+      
+      self.sliderBackground = paper.rect(0, 0, paper.width, paper.height, paper.height * .3); 
+      self.sliderBackground.attr("fill", backgroundColor); 
+      self.sliderBackground.attr("stroke-width", 0);
+      
+      var sl = paper.width * .1;
+      var st = paper.height * .4;
+      var sw = paper.width - (sl * 2);
+      var sh = paper.height - (st * 2);
+      
+      self.sliderLine = paper.rect(sl, st, sw, sh, paper.height * .1);
+      self.sliderLine.attr("fill", "#ffffff"); 
+      self.sliderLine.attr("stroke-width", 0);
+      
+      var stl = paper.width * .1;
+      var stt = paper.height * .2;
+      var stw = paper.width * .03;
+      var sth = paper.height - (stt * 2);
+      
+      var sliderThumb = paper.rect(stl, stt, stw, sth, paper.height * .1);
+      sliderThumb.attr("fill", "#ffffff"); 
+      sliderThumb.attr("stroke-width", 2);
+      
+      var startX;
+      var sliderStartX;
+      self.sliderValue = min;
+      
+      this.valueChanged = onValueChanged;
+      
+      var move = function(dx, dy, x, y) {
+          if (sliderStartX + dx >= (stl - stw) && sliderStartX + dx <= (stl + sw))
+          {
+             var rawValue = Math.min(1.0, Math.max(0.0, ((sliderStartX + dx) - sl) / sw));
+             self.sliderValue = min + ((max - min) * rawValue); 
+             sliderThumb.attr("x", sliderStartX + dx);
+             self.valueChanged();
+          }
+      },
+      start = function(x, y) {
+          startX = x;
+          sliderStartX = sliderThumb.attr("x");
+          sliderThumb.attr("fill", "#000000");
+
+      },
+      up = function () {
+          sliderThumb.attr("fill", "#ffffff"); 
+      };
+      
+      sliderThumb.drag(move, start, up);
+
+    };
+   
+
+  </script>
+
+  <!-- Some divs to report info about the slider and color values -->
+  <div class="label" id="slider1Value">Red: 0</div>
+  <div class="label" id="slider2Value">Green: 0</div>
+  <div class="label" id="slider3Value">Blue: 0</div>
+  <div class="label" id="Hue">Hue: 0</div>
+  <div class="label" id="Sat">Saturation: 0</div>
+  <div class="label" id="Bright">Brightness: 0</div>
+  <div class="label" id="Hex">Hex: #000000</div>
+
+  
+</body>
+</html>

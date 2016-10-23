@@ -1,0 +1,34 @@
+div
+{
+   font-family: 'helvetica', 'arial', 'sans-serif';
+}
+
+#title
+{
+   font-weight: bold;
+   font-size: 36px;
+}
+
+#description
+{
+   position: absolute;
+   top: 50px;
+}
+
+#movesTitle
+{
+   position: absolute;
+   left: 530px;
+   top: 270px;
+   font-weight: bold;
+   font-size: 48px;
+}
+
+#moves
+{
+   position: absolute;
+   left: 590px;
+   top: 320px;
+   font-weight: bold;
+   font-size: 78px;
+}

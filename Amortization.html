@@ -1,0 +1,272 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="Amortization.css">
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+<script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script> <!--todo local file-->
+<script type="text/javascript" src="date.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.0.0/raphael-min.js"></script>
+
+<script>
+
+  $(document).ready(function() {
+
+	$(function() {
+	    $( "#mortgageStartDate" ).datepicker({ defaultDate: new Date() });
+		$("#mortgageStartDate").attr('value', Date.today().toString('M/d/yyyy'));
+    });
+	
+	$('#mortgageStartDate').change(function() {
+		calculatePayments();
+	});
+
+	$('#mortgageTermMonths').change(function() {
+		$('#mortgageTermYears').val((this.value / 12).toFixed(2));
+		calculatePayments();
+	});
+	
+	$('#mortgageAmount').change(function() {
+		calculatePayments();
+	});
+	
+	$('#mortgageInterestRate').change(function() { 
+		calculatePayments();
+	});
+	
+	$('#extraPayment').change(function() { 
+		calculatePayments();
+	});
+	
+	$('#mortgageTermYears').change(function() {
+	   $('#mortgageTermMonths').val(this.value * 12);	
+		calculatePayments();
+	});
+	
+	calculatePayments();
+	
+   });
+	
+	function buildAmortizationTable(monthlyPayment, monthlyInterestRate) {
+		$('#amortizationTable').empty();
+		$('#totalsSection').empty();
+		
+		var mortgageAmount = $('#mortgageAmount').val();
+		if (monthlyPayment, monthlyInterestRate != undefined || mortgageAmount != undefined)
+		{	
+			var tableBuilder = [];
+			var resultsBuilder = [];
+			var paymentCounter = 0;
+			var paymentCounterNoExtraPayment = 0;
+			
+			resultsBuilder.push('<table class="resultsTable">');
+			
+			tableBuilder.push( 
+				'<table><tr class="tableHeader"><td class="paymentNumberCell">Payment</td>' + 
+				'<td class="principalAmountCell">Principal</td><td class="interestCell">Interest</td>' + 
+				'<td class="remainingAmountCell">Remaining</td>' + 
+				'<td class="totalPrincipalPaid">Total Principal</td>' + 
+				'<td class="totalInterestPaid">Total Interest</td></tr>');
+			
+			var selectedDate = $("#mortgageStartDate").val() ? new Date($("#mortgageStartDate").val()) : new Date();
+			var totalInterest = 0;
+			var totalInterestNoExtraPayment = 0;
+			var totalPrincipal = 0;
+			var totalPrincipalNoExtraPayment = 0;
+			var originalMortgageAmount = parseFloat(mortgageAmount);
+			var mortgageAmountNoExtraPayment = mortgageAmount;
+			var extraPayment = $('#extraPayment').val() || 0;
+			extraPayment = parseFloat(extraPayment);
+
+			while (mortgageAmount > 0)
+			{
+				var currentMonthlyInterest = mortgageAmount * monthlyInterestRate;
+				var currentMonthlyPrincipal = (monthlyPayment - currentMonthlyInterest) + extraPayment;
+			    totalInterest += currentMonthlyInterest;
+			    totalPrincipal += currentMonthlyPrincipal;
+				mortgageAmount -= currentMonthlyPrincipal;
+
+				if (mortgageAmount <= 0)
+				{
+					break;
+				}
+				
+				paymentCounter++;
+				var paymentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + paymentCounter, selectedDate.getDate(), 0, 0, 0);
+				
+				var line = '<tr class="' + (paymentCounter % 2 == 0 ? 'normal' : 'alternate') + '"><td class="paymentNumberCell">' + (paymentCounter).toString() + ' - ' + paymentDate.toDateString() + 
+								 '</td><td class="principalAmountCell">' + currentMonthlyPrincipal.toFixed(2) +
+								 '</td><td class="interestCell">' + currentMonthlyInterest.toFixed(2) + 
+								 '</td><td class="remainingAmountCell">' + mortgageAmount.toFixed(2) + 
+								 '</td><td class="totalPrincipalPaid">' + totalPrincipal.toFixed(2) + 
+								 '</td><td class="totalInterestPaid">' + totalInterest.toFixed(2) + '</td></tr>';
+						
+				tableBuilder.push(line);
+			}
+			
+			// also calculate without extra payment
+			while (mortgageAmountNoExtraPayment > 0)
+			{
+				var currentMonthlyInterest = mortgageAmountNoExtraPayment * monthlyInterestRate;
+				var currentMonthlyPrincipal = (monthlyPayment - currentMonthlyInterest);
+				mortgageAmountNoExtraPayment -= currentMonthlyPrincipal;			
+				if (mortgageAmountNoExtraPayment <= 0)
+				{
+					break;
+				}
+				
+				totalInterestNoExtraPayment += currentMonthlyInterest;
+			    totalPrincipalNoExtraPayment += currentMonthlyPrincipal;
+							paymentCounterNoExtraPayment++;
+			}
+			
+			var payoffDateNoExtraPayments = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + paymentCounterNoExtraPayment, selectedDate.getDate(), 0, 0, 0);
+			var payoffDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + paymentCounter, selectedDate.getDate(), 0, 0, 0);
+
+			resultsBuilder.push('<tr class="tableHeader"><td/><td class="rNone">No Extra Payment</td><td class="rExtra">With Extra Payment</td><td class="rDiff">Savings</td></tr>');
+			resultsBuilder.push('<tr><td class="rHeader">Monthly Payment:</td><td class="rNone">' + monthlyPayment.toFixed(2) + '</td><td  class="rExtra">' + 
+													(extraPayment != 0 ? (monthlyPayment + extraPayment).toFixed(2) : 'N/A') + '</td><td class="rDiff">' + 
+													'N/A' + '</td></tr>');
+			resultsBuilder.push('<tr><td class="rHeader">Total Interest Paid:</td><td class="rNone">' + totalInterestNoExtraPayment.toFixed(2) + '</td><td  class="rExtra">' +
+							   (extraPayment != 0 ? totalInterest.toFixed(2) : 'N/A') + '</td><td class="rDiff">' + 
+							   (extraPayment != 0 ? (totalInterestNoExtraPayment - totalInterest).toFixed(2) : 'N/A') + '</td></tr>');
+			resultsBuilder.push('<tr><td class="rHeader">Total Payment:</td><td class="rNone">' + (totalInterestNoExtraPayment + originalMortgageAmount).toFixed(2) + '</td><td  class="rExtra">' +
+											   (extraPayment != 0 ? (totalInterest + originalMortgageAmount).toFixed(2) : 'N/A') + '</td><td class="rDiff">' + 
+											   (extraPayment != 0 ? (totalInterestNoExtraPayment - totalInterest).toFixed(2) : 'N/A') + '</td></tr>');
+			resultsBuilder.push('<tr><td class="rHeader">Months to Payoff:</td><td class="rNone">' + paymentCounterNoExtraPayment + ' months</td><td  class="rExtra">' + 
+								(extraPayment != 0 ? paymentCounter + ' months' : 'N/A') + '</td><td class="rDiff">' + 
+								(extraPayment != 0 ? (paymentCounterNoExtraPayment - paymentCounter) + ' months' : 'N/A') + '</td></tr>');
+			resultsBuilder.push('<tr><td class="rHeader">Payoff Date:</td><td class="rNone">' + payoffDateNoExtraPayments.toDateString() + '</td><td  class="rExtra">' + 
+								(extraPayment != 0 ? payoffDate.toDateString() : 'N/A') + '</td><td class="rDiff">' + 
+								(extraPayment != 0 ? (paymentCounterNoExtraPayment - paymentCounter) + ' months' : 'N/A') + '</td></tr>');
+
+			resultsBuilder.push('</table>');
+			var res = resultsBuilder.join('');
+			$('#totalsSection').html(res);
+			
+			tableBuilder.push('</table>');
+			var amort = tableBuilder.join('');
+			$('#amortizationTable').html(amort);
+		}
+		
+	};
+	
+	function calculatePayments() {
+		var apr = $('#mortgageInterestRate').val();
+	    var months = $('#mortgageTermMonths').val();
+		var mortgageAmount = $('#mortgageAmount').val();
+
+		if (apr === undefined ||
+			months === undefined ||
+			mortgageAmount === undefined)
+			{
+				return 0;
+			}
+		else
+		{
+			var monthlyInterestRate = apr / 1200;				
+			var monthlyPayment = mortgageAmount * 
+					(monthlyInterestRate / (1 - Math.pow((1 + monthlyInterestRate), (-1 * months)) ));
+					
+			$('#mortgagePayments').attr('value', monthlyPayment.toFixed(2));
+			
+			buildAmortizationTable(monthlyPayment, monthlyInterestRate);
+			
+			//return monthlyPayment.toFixed(2);	
+		}
+	};
+	
+	
+
+</script>
+
+</head>
+
+<body>
+<script type="text/javascript">// <![CDATA[
+var paper = Raphael(650, 5, 400, 400);
+    //var circle = paper.circle(150, 150, 125);
+    //circle.attr("fill", "#f00");
+    
+     var face = paper.rect(100, 100, 200, 160, 10);
+     face.attr("fill", "#CC3300");
+     face.attr("stroke-width", "0");
+
+     var windowAll = paper.rect(230, 140, 50, 50);
+     windowAll.attr("fill", "#CC9933");
+     windowAll.attr("stroke-width", "0");
+     var windowTL = paper.rect(233, 143, 20, 20);
+     windowTL.attr("fill", "#E8E8E8");
+     windowTL.attr("stroke-width", "0");
+     var windowTR = paper.rect(257, 143, 20, 20);
+     windowTR.attr("fill", "#E8E8E8");
+     windowTR.attr("stroke-width", "0");
+     var windowBL = paper.rect(233, 167, 20, 20);
+     windowBL.attr("fill", "#E8E8E8");
+     windowBL.attr("stroke-width", "0");
+     var windowTR = paper.rect(257, 167, 20, 20);
+     windowTR.attr("fill", "#E8E8E8");
+     windowTR.attr("stroke-width", "0");
+
+     var door = paper.rect(140, 140, 60, 120);
+     door.attr("fill", "#CC9933");
+     door.attr("stroke-width", "0");
+     var doorknob = paper.circle(185, 200, 5);
+     doorknob.attr("fill", "#E8E8E8");
+     doorknob.attr("stroke-width", "0");
+    
+     var roof = paper.path("M70 110L330 110L270 30L130 30Z");
+     roof.attr("fill", "#686868");
+     roof.attr("stroke-width", "0");
+
+     //paper.setViewBox(650, 5, 400, 400, true);
+// ]]></script>
+<p></p>
+<!-- Mortgage Inputs -->
+<div class="mainCalculatorTitle"><span class="mainCalculatorTitle">Mortgage Amortization Calculator</span></div>
+<div class="mainDiv">
+<div class="amortizationTitle"><span class="amortizationTitle">Inputs</span></div>
+<div class="mortgageInputs">
+<table>
+<tbody>
+<tr>
+<td>Mortgage Start Date:</td>
+<td><input id="mortgageStartDate" class="inputText" name="mortgageStartDate" type="text" /></td>
+</tr>
+<tr>
+<td>Mortgage Amount:</td>
+<td><input id="mortgageAmount" class="inputText" name="mortgageAmountTextBox" value="250000" type="text" /></td>
+</tr>
+<tr>
+<td>Mortgage Term:</td>
+<td><input id="mortgageTermYears" value="30" class="inputText" name="mortgageTermYears" type="text" /></td>
+<td>years, or</td>
+<td><input id="mortgageTermMonths" value="360" class="inputText" name="mortgageTermMonths" type="text" /></td>
+<td>months</td>
+</tr>
+<tr>
+<td>Mortgage Interest Rate:</td>
+<td><input id="mortgageInterestRate" value="7" class="inputText" name="mortgageInterestRate" type="text" /></td>
+</tr>
+<tr>
+<td>Monthly Payment:</td>
+<td><input readonly="readonly" id="mortgagePayments" class="inputText" name="monthlyPayments" type="text" /></td>
+</tr>
+<tr>
+<td>Extra Monthly Payment:</td>
+<td><input id="extraPayment" class="inputText" name="extraPayment" type="text" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+<div class="amortizationTitle"><span class="amortizationTitle">Results</span></div>
+<div id="totalsSection" class="totalsSection"></div>
+<hr /><!-- Amortization Table -->
+<div class="amortizationTitle"><span class="amortizationTitle">Amortization Table</span>
+<div></div>
+<div id="amortizationTable" class="amortizationTable"></div>
+</div>
+</div>
+</body>
+
+</html>

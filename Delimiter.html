@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+<meta charset=utf-8 />
+<title>JS Bin</title>
+<link rel="stylesheet" type="text/css" href="Delimiter.css">
+</head>
+<body>
+  <script>
+    $(function() {
+      $("#inputText").change(function () {
+        updateOutputBox();        
+      });
+      
+      $("#inputText").keyup(function () {
+        updateOutputBox();
+      });
+      
+      $("#trimWhitespaceCheckbox").click(function () {
+        updateOutputBox();
+      });
+      
+      $("#inputDelimiterText").keyup(function () {
+        updateOutputBox();
+      });
+      
+      $("#outputDelimiterText").keyup(function () {
+        updateOutputBox();
+      });
+      
+      
+    });
+    
+    function updateOutputBox() {
+        var inputDelimiter = $("#inputDelimiterText").val();
+        var outputDelimiter = $("#outputDelimiterText").val();
+        
+        if (inputDelimiter === '')
+        {
+          inputDelimiter = ',';
+        }
+        if (outputDelimiter === '')
+        {
+          outputDelimiter = ';';
+        }
+        
+        var inputTags = $("#inputText").val().split(inputDelimiter);
+        
+        var outputTags = '';
+        var trimWhitespace = $("#trimWhitespaceCheckbox").is(":checked");
+             
+        $.each(inputTags, function(key, tag) {
+          var wildCardIndex = outputDelimiter.indexOf('*');
+          if (trimWhitespace)
+          {
+             tag = $.trim(tag);
+          }
+          if (wildCardIndex >= 0)
+          {
+            var prefix = outputDelimiter.replace('*', tag);
+            outputTags += prefix;
+          }
+          else
+          {
+            if (key > 0)
+            {
+              outputTags += outputDelimiter + tag;
+            }
+            else
+            {
+              outputTags = tag;
+            }
+            
+             
+          }
+        });
+
+        $("#outputText").text(outputTags);  
+    };
+    
+    
+  </script>
+  
+  <div id="inputDelimiter">
+    <span class="label">Input Delimiter:</span><input id="inputDelimiterText" value=','> 
+  </div>
+  <div id="inputDiv">
+    <textarea id="inputText"></textarea>
+  </div>
+  
+  <br/>
+  
+  <div id="outputDelimiter">
+    <span class="label">Output Delimiter:</span><input id="outputDelimiterText" value=';'><span class="label">Trim whitespace</span><input id="trimWhitespaceCheckbox" checked="true" type="checkbox"> 
+  </div>
+  <div id="outputDiv">
+    <textarea id="outputText"></textarea>  
+  </div>
+</body>
+</html>

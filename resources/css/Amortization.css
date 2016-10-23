@@ -1,0 +1,136 @@
+*
+{
+	font-family:"Helvetica", "Arial", sans-serif;
+}
+
+div.mainDiv
+{
+    padding: 10px;
+    /*border-width: 5px;*/
+    /*border-style:solid;*/
+
+    /*border-radius: 8px;*/
+    /*border-color: black;*/
+}
+
+div.mainCalculatorTitle
+{
+    background-color: #9999FF;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+span.mainCalculatorTitle
+{
+    font-weight: bold;
+    font-size: 24px;
+}
+
+div.mortgageInputs
+{
+    background-color:#E0F2F7;
+	border-radius:8px;
+	padding:5px;
+}
+
+div.amortizationTable
+{
+	background-color:#F0F0F0;
+	border-radius:8px;
+	margin-top:10px;
+	padding:5px;
+}
+
+div.totalsSection
+{
+    background-color:#CEF6D8;
+	/*background-color:#E9967A;*/
+	border-radius:8px;
+	padding:5px;
+}
+
+table.results
+{
+	padding = 2px;
+}
+
+div.amortizationTitle
+{
+	height:40px;
+
+}
+
+span.amortizationTitle
+{
+	font-weight:bold;
+	float:vertical;
+}
+
+tr.alternate
+{
+	background-color:#FFFFCC;
+}
+
+tr.normal
+{
+	background-color:#FFFFFF;
+}
+
+tr.tableHeader
+{
+	font-weight:bold;
+}
+
+td.paymentNumberCell
+{
+	width:210px;
+}
+
+td.principalAmountCell
+{
+	width:100px;
+	text-align:right;
+}
+
+td.interestCell
+{
+	width:100px;
+	text-align:right;
+}
+
+td.remainingAmountCell
+{
+	width:200px;
+	text-align:right;
+}
+
+td.totalPrincipalPaid
+{
+	width:150px;
+	text-align:right;
+}
+
+td.totalInterestPaid
+{
+	width:150px;
+	text-align:right;
+}
+
+td.rNone
+{
+	width:180px;
+	text-align:right;
+}
+
+td.rExtra
+{
+	width:180px;
+	text-align:right;
+}
+
+td.rDiff
+{
+	width:180px;
+	text-align:right;
+	font-weight:bold;
+}
